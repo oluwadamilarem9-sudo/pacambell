@@ -14,6 +14,13 @@ import java.awt.event.KeyEvent;
  */
 public class Template extends Game
 {
+    private float spriteX;
+    private float spriteY;
+    private float spriteSpeed;
+    private int spriteWidth;
+    private int spriteHeight;
+    private int spriteDirectionX = 1;
+
     /**
      * Any objects/variables that need to be Initialized should do so
      * in Initialize().
@@ -23,7 +30,12 @@ public class Template extends Game
     {
         // Initialize stuff in Base
         super.initialize();
-        // TODO: Any Variables that need to be initialized at startup should go here.
+        // Initialize the moving sprite
+        this.spriteX = 100;
+        this.spriteY = 250;
+        this.spriteSpeed = 200.0f; // pixels per second
+        this.spriteWidth = 64;
+        this.spriteHeight = 64;
     }
 
     /**
@@ -60,7 +72,22 @@ public class Template extends Game
     {
         // Call base class
         super.update(gameTime);
-        // TODO: Any logic for the program should be performed in this method.
+        // Move the sprite
+        float deltaSeconds = gameTime.getDeltaTimeSeconds();
+        this.spriteX += this.spriteDirectionX * this.spriteSpeed * deltaSeconds;
+
+        // Bounce at the screen edges
+        if(this.spriteX <= 0)
+        {
+            this.spriteX = 0;
+            this.spriteDirectionX = 1;
+        }
+        else if(this.spriteX + this.spriteWidth >= 800)
+        {
+            this.spriteX = 800 - this.spriteWidth;
+            this.spriteDirectionX = -1;
+        }
+
         this.fps.update(gameTime);
         //<editor-fold defaultstate="collapsed" desc="System & Menu Keys">
         if(Keyboard.keyDownOnce(KeyEvent.VK_ESCAPE))
@@ -79,7 +106,9 @@ public class Template extends Game
     {
         // Call Base Class to clear Screen
         super.draw(g2d);
-        // TODO: Any Drawing routines should be performed in this method. Try to keep logic in the update loop.
+        // Draw the moving sprite
+        g2d.setColor(Color.YELLOW);
+        g2d.fillOval((int)this.spriteX, (int)this.spriteY, this.spriteWidth, this.spriteHeight);
         this.fps.draw(g2d);
     }
 

@@ -52,3 +52,11 @@ Thumbs.db
 #########################################
 /.idea/
 Game.iml
+# Local VS Code settings
+.vscode/
+
+# Local Java runtime download
+jdk21/
+
+# Temporary compile source list
+sources.txt
