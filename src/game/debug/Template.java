@@ -34,8 +34,24 @@ public class Template extends Game
     private int enemyWidth;
     private int enemyHeight;
 
+    private float enemy2X;
+    private float enemy2Y;
+    private float enemy2Speed;
+    private int enemy2Width;
+    private int enemy2Height;
+
+    private float collectibleX;
+    private float collectibleY;
+    private int collectibleSize;
+    private boolean collectibleActive;
+    private float collectibleTimer;
+
     private int score;
     private float scoreTimer;
+    private int lives;
+    private int highScore;
+    private boolean invulnerable;
+    private float invulnerableTimer;
     private boolean gameOver;
     private GameState gameState;
 
@@ -68,8 +84,23 @@ public class Template extends Game
         this.enemyWidth = 64;
         this.enemyHeight = 64;
 
+        // Initialize a second enemy
+        this.enemy2X = 300;
+        this.enemy2Y = 100;
+        this.enemy2Speed = 120.0f;
+        this.enemy2Width = 64;
+        this.enemy2Height = 64;
+
+        // Initialize collectibles
+        this.collectibleSize = 24;
+        this.collectibleTimer = 0.0f;
+        spawnCollectible();
+
         this.score = 0;
         this.scoreTimer = 0.0f;
+        this.lives = 3;
+        this.invulnerable = false;
+        this.invulnerableTimer = 0.0f;
         this.gameOver = false;
     }
 
@@ -77,6 +108,13 @@ public class Template extends Game
     {
         resetGame();
         this.gameState = GameState.PLAYING;
+    }
+
+    private void spawnCollectible()
+    {
+        this.collectibleX = 50 + (float)(Math.random() * (800 - 100 - this.collectibleSize));
+        this.collectibleY = 120 + (float)(Math.random() * (600 - 140 - this.collectibleSize));
+        this.collectibleActive = true;
     }
 
     /**
@@ -162,6 +200,19 @@ public class Template extends Game
                     this.enemySpeed = -Math.abs(this.enemySpeed);
                 }
 
+                // Move second enemy vertically
+                this.enemy2Y += this.enemy2Speed * deltaSeconds;
+                if(this.enemy2Y <= 0)
+                {
+                    this.enemy2Y = 0;
+                    this.enemy2Speed = Math.abs(this.enemy2Speed);
+                }
+                else if(this.enemy2Y + this.enemy2Height >= 600)
+                {
+                    this.enemy2Y = 600 - this.enemy2Height;
+                    this.enemy2Speed = -Math.abs(this.enemy2Speed);
+                }
+
                 // Score increases while the player survives
                 this.scoreTimer += deltaSeconds;
                 if(this.scoreTimer >= 1.0f)
@@ -170,12 +221,64 @@ public class Template extends Game
                     this.scoreTimer -= 1.0f;
                 }
 
-                // Check for collision with the enemy
-                if(new Rectangle((int)this.playerX, (int)this.playerY, this.playerWidth, this.playerHeight)
+                // Check for collectible pickup
+                if(this.collectibleActive && new Rectangle((int)this.playerX, (int)this.playerY, this.playerWidth, this.playerHeight)
+                        .intersects(new Rectangle((int)this.collectibleX, (int)this.collectibleY, this.collectibleSize, this.collectibleSize)))
+                {
+                    this.score += 5;
+                    this.collectibleActive = false;
+                    this.collectibleTimer = 0.0f;
+                }
+
+                if(!this.collectibleActive)
+                {
+                    this.collectibleTimer += deltaSeconds;
+                    if(this.collectibleTimer >= 3.0f)
+                    {
+                        spawnCollectible();
+                        this.collectibleTimer = 0.0f;
+                    }
+                }
+
+                // Check for collision with the first enemy
+                if(!this.invulnerable && new Rectangle((int)this.playerX, (int)this.playerY, this.playerWidth, this.playerHeight)
                         .intersects(new Rectangle((int)this.enemyX, (int)this.enemyY, this.enemyWidth, this.enemyHeight)))
                 {
-                    this.gameOver = true;
-                    this.gameState = GameState.GAME_OVER;
+                    this.lives -= 1;
+                    this.invulnerable = true;
+                    this.invulnerableTimer = 2.0f;
+                    this.playerX = 100;
+                    this.playerY = 250;
+                    if(this.lives <= 0)
+                    {
+                        this.gameOver = true;
+                        this.gameState = GameState.GAME_OVER;
+                        this.highScore = Math.max(this.highScore, this.score);
+                    }
+                }
+
+                // Check for collision with the second enemy
+                if(!this.invulnerable && new Rectangle((int)this.playerX, (int)this.playerY, this.playerWidth, this.playerHeight)
+                        .intersects(new Rectangle((int)this.enemy2X, (int)this.enemy2Y, this.enemy2Width, this.enemy2Height)))
+                {
+                    this.lives -= 1;
+                    this.invulnerable = true;
+                    this.invulnerableTimer = 2.0f;
+                    this.playerX = 100;
+                    this.playerY = 250;
+                    if(this.lives <= 0)
+                    {
+                        this.gameOver = true;
+                        this.gameState = GameState.GAME_OVER;
+                        this.highScore = Math.max(this.highScore, this.score);
+                    }
+                }
+
+                if(this.invulnerable)
+                {
+                    this.invulnerableTimer -= deltaSeconds;
+                    if(this.invulnerableTimer <= 0.0f)
+                        this.invulnerable = false;
                 }
 
                 if(Keyboard.keyDownOnce(KeyEvent.VK_P))
@@ -223,20 +326,38 @@ public class Template extends Game
                 break;
             default:
                 // Draw the player sprite
-                g2d.setColor(Color.YELLOW);
+                g2d.setColor(this.invulnerable ? Color.ORANGE : Color.YELLOW);
                 g2d.fillOval((int)this.playerX, (int)this.playerY, this.playerWidth, this.playerHeight);
 
-                // Draw the enemy
+                // Draw the first enemy
                 g2d.setColor(Color.RED);
                 g2d.fillRect((int)this.enemyX, (int)this.enemyY, this.enemyWidth, this.enemyHeight);
+
+                // Draw the second enemy
+                g2d.setColor(Color.MAGENTA);
+                g2d.fillRect((int)this.enemy2X, (int)this.enemy2Y, this.enemy2Width, this.enemy2Height);
+
+                // Draw collectible
+                if(this.collectibleActive)
+                {
+                    g2d.setColor(Color.GREEN);
+                    g2d.fillOval((int)this.collectibleX, (int)this.collectibleY, this.collectibleSize, this.collectibleSize);
+                }
 
                 // Draw controls and status
                 g2d.setColor(Color.WHITE);
                 g2d.drawString("Use arrow keys or WASD to move.", 10, 20);
                 g2d.drawString("Press ESC to quit.", 10, 40);
                 g2d.drawString(String.format("Score: %d", this.score), 10, 60);
-                g2d.drawString(String.format("Position: %.0f, %.0f", this.playerX, this.playerY), 10, 80);
-                g2d.drawString("Press P to pause.", 10, 100);
+                g2d.drawString(String.format("Lives: %d", this.lives), 10, 80);
+                g2d.drawString(String.format("Best: %d", this.highScore), 10, 100);
+                g2d.drawString("Press P to pause.", 10, 120);
+                g2d.drawString("Collect green orb for +5.", 10, 140);
+
+                if(this.invulnerable)
+                {
+                    g2d.drawString("Invulnerable!", 10, 160);
+                }
 
                 if(this.gameState == GameState.PAUSED)
                 {
