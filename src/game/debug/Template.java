@@ -30,16 +30,19 @@ public class Template extends Game
 
     private float enemyX;
     private float enemyY;
+    private float enemyDirectionX;
+    private float enemyBaseSpeed;
     private float enemySpeed;
     private int enemyWidth;
     private int enemyHeight;
 
     private float enemy2X;
     private float enemy2Y;
-    private float enemy2Speed;
+    private float enemy2BaseSpeed;
     private int enemy2Width;
     private int enemy2Height;
 
+    private float elapsedTime;
     private float collectibleX;
     private float collectibleY;
     private int collectibleSize;
@@ -80,14 +83,16 @@ public class Template extends Game
         // Initialize a simple enemy
         this.enemyX = 500;
         this.enemyY = 220;
-        this.enemySpeed = 140.0f;
+        this.enemyDirectionX = 1.0f;
+        this.enemyBaseSpeed = 140.0f;
+        this.enemySpeed = this.enemyBaseSpeed;
         this.enemyWidth = 64;
         this.enemyHeight = 64;
 
         // Initialize a second enemy
         this.enemy2X = 300;
         this.enemy2Y = 100;
-        this.enemy2Speed = 120.0f;
+        this.enemy2BaseSpeed = 120.0f;
         this.enemy2Width = 64;
         this.enemy2Height = 64;
 
@@ -98,6 +103,7 @@ public class Template extends Game
 
         this.score = 0;
         this.scoreTimer = 0.0f;
+        this.elapsedTime = 0.0f;
         this.lives = 3;
         this.invulnerable = false;
         this.invulnerableTimer = 0.0f;
@@ -187,31 +193,38 @@ public class Template extends Game
                 this.playerX = Math.max(0, Math.min(this.playerX, 800 - this.playerWidth));
                 this.playerY = Math.max(0, Math.min(this.playerY, 600 - this.playerHeight));
 
+                // Increase difficulty over time
+                this.elapsedTime += deltaSeconds;
+                float difficultyScale = 1.0f + Math.min(this.elapsedTime / 30.0f, 2.0f);
+                this.enemySpeed = this.enemyBaseSpeed * difficultyScale;
+                float enemy2Speed = this.enemy2BaseSpeed * difficultyScale;
+
                 // Move enemy and bounce it off screen edges
-                this.enemyX += this.enemySpeed * deltaSeconds;
+                this.enemyX += this.enemyDirectionX * this.enemySpeed * deltaSeconds;
                 if(this.enemyX <= 0)
                 {
                     this.enemyX = 0;
-                    this.enemySpeed = Math.abs(this.enemySpeed);
+                    this.enemyDirectionX = 1.0f;
                 }
                 else if(this.enemyX + this.enemyWidth >= 800)
                 {
                     this.enemyX = 800 - this.enemyWidth;
-                    this.enemySpeed = -Math.abs(this.enemySpeed);
+                    this.enemyDirectionX = -1.0f;
                 }
 
-                // Move second enemy vertically
-                this.enemy2Y += this.enemy2Speed * deltaSeconds;
-                if(this.enemy2Y <= 0)
+                // Move second enemy toward the player
+                float chaseX = this.playerX - this.enemy2X;
+                float chaseY = this.playerY - this.enemy2Y;
+                float chaseLength = (float)Math.sqrt(chaseX * chaseX + chaseY * chaseY);
+                if(chaseLength > 0.1f)
                 {
-                    this.enemy2Y = 0;
-                    this.enemy2Speed = Math.abs(this.enemy2Speed);
+                    this.enemy2X += (chaseX / chaseLength) * enemy2Speed * deltaSeconds;
+                    this.enemy2Y += (chaseY / chaseLength) * enemy2Speed * deltaSeconds;
                 }
-                else if(this.enemy2Y + this.enemy2Height >= 600)
-                {
-                    this.enemy2Y = 600 - this.enemy2Height;
-                    this.enemy2Speed = -Math.abs(this.enemy2Speed);
-                }
+
+                // Keep the second enemy inside the window
+                this.enemy2X = Math.max(0, Math.min(this.enemy2X, 800 - this.enemy2Width));
+                this.enemy2Y = Math.max(0, Math.min(this.enemy2Y, 600 - this.enemy2Height));
 
                 // Score increases while the player survives
                 this.scoreTimer += deltaSeconds;
@@ -351,12 +364,13 @@ public class Template extends Game
                 g2d.drawString(String.format("Score: %d", this.score), 10, 60);
                 g2d.drawString(String.format("Lives: %d", this.lives), 10, 80);
                 g2d.drawString(String.format("Best: %d", this.highScore), 10, 100);
-                g2d.drawString("Press P to pause.", 10, 120);
-                g2d.drawString("Collect green orb for +5.", 10, 140);
+                g2d.drawString(String.format("Difficulty: %.1fx", 1.0f + Math.min(this.elapsedTime / 30.0f, 2.0f)), 10, 120);
+                g2d.drawString("Press P to pause.", 10, 140);
+                g2d.drawString("Collect green orb for +5.", 10, 160);
 
                 if(this.invulnerable)
                 {
-                    g2d.drawString("Invulnerable!", 10, 160);
+                    g2d.drawString("Invulnerable!", 10, 180);
                 }
 
                 if(this.gameState == GameState.PAUSED)
