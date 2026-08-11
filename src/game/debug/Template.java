@@ -58,6 +58,11 @@ public class Template extends Game
     private boolean gameOver;
     private GameState gameState;
 
+    private int selectedTitleOption;
+    private int selectedPauseOption;
+    private static final String[] TITLE_OPTIONS = {"Start Game", "Exit"};
+    private static final String[] PAUSE_OPTIONS = {"Resume", "Quit"};
+
     /**
      * Any objects/variables that need to be Initialized should do so
      * in Initialize().
@@ -69,6 +74,8 @@ public class Template extends Game
         super.initialize();
         resetGame();
         this.gameState = GameState.TITLE;
+        this.selectedTitleOption = 0;
+        this.selectedPauseOption = 0;
     }
 
     private void resetGame()
@@ -163,8 +170,17 @@ public class Template extends Game
         switch(this.gameState)
         {
             case TITLE:
+                if(Keyboard.keyDownOnce(KeyEvent.VK_DOWN) || Keyboard.keyDownOnce(KeyEvent.VK_S))
+                    this.selectedTitleOption = (this.selectedTitleOption + 1) % TITLE_OPTIONS.length;
+                if(Keyboard.keyDownOnce(KeyEvent.VK_UP) || Keyboard.keyDownOnce(KeyEvent.VK_W))
+                    this.selectedTitleOption = (this.selectedTitleOption + TITLE_OPTIONS.length - 1) % TITLE_OPTIONS.length;
                 if(Keyboard.keyDownOnce(KeyEvent.VK_ENTER))
-                    startGame();
+                {
+                    if(this.selectedTitleOption == 0)
+                        startGame();
+                    else
+                        Game.exitGame();
+                }
                 break;
             case PLAYING:
                 float movementX = 0.0f;
@@ -295,9 +311,23 @@ public class Template extends Game
                 }
 
                 if(Keyboard.keyDownOnce(KeyEvent.VK_P))
+                {
+                    this.selectedPauseOption = 0;
                     this.gameState = GameState.PAUSED;
+                }
                 break;
             case PAUSED:
+                if(Keyboard.keyDownOnce(KeyEvent.VK_DOWN) || Keyboard.keyDownOnce(KeyEvent.VK_S))
+                    this.selectedPauseOption = (this.selectedPauseOption + 1) % PAUSE_OPTIONS.length;
+                if(Keyboard.keyDownOnce(KeyEvent.VK_UP) || Keyboard.keyDownOnce(KeyEvent.VK_W))
+                    this.selectedPauseOption = (this.selectedPauseOption + PAUSE_OPTIONS.length - 1) % PAUSE_OPTIONS.length;
+                if(Keyboard.keyDownOnce(KeyEvent.VK_ENTER))
+                {
+                    if(this.selectedPauseOption == 0)
+                        this.gameState = GameState.PLAYING;
+                    else
+                        Game.exitGame();
+                }
                 if(Keyboard.keyDownOnce(KeyEvent.VK_P))
                     this.gameState = GameState.PLAYING;
                 break;
@@ -329,13 +359,23 @@ public class Template extends Game
         switch(this.gameState)
         {
             case TITLE:
+                g2d.setColor(new Color(0, 0, 0, 180));
+                g2d.fillRect(160, 160, 480, 240);
                 g2d.setColor(Color.WHITE);
-                g2d.setFont(new Font("Arial", Font.BOLD, 36));
+                g2d.setFont(new Font("Arial", Font.BOLD, 42));
                 g2d.drawString("Java Game Demo", 240, 220);
-                g2d.setFont(new Font("Arial", Font.PLAIN, 18));
-                g2d.drawString("Press ENTER to start.", 300, 260);
-                g2d.drawString("Use arrow keys or WASD to move.", 280, 290);
-                g2d.drawString("Press ESC to quit.", 310, 320);
+                g2d.setFont(new Font("Arial", Font.PLAIN, 20));
+                g2d.drawString("Use arrow keys or WASD to move.", 260, 260);
+                g2d.drawString("Press ENTER to select.", 280, 290);
+
+                for(int i = 0; i < TITLE_OPTIONS.length; i++)
+                {
+                    if(i == this.selectedTitleOption)
+                        g2d.setColor(Color.YELLOW);
+                    else
+                        g2d.setColor(Color.WHITE);
+                    g2d.drawString(TITLE_OPTIONS[i], 340, 340 + (i * 30));
+                }
                 break;
             default:
                 // Draw the player sprite
@@ -375,17 +415,30 @@ public class Template extends Game
 
                 if(this.gameState == GameState.PAUSED)
                 {
-                    g2d.setFont(new Font("Arial", Font.BOLD, 24));
-                    g2d.drawString("Paused", 360, 280);
+                    g2d.setColor(new Color(0, 0, 0, 180));
+                    g2d.fillRect(240, 220, 320, 140);
+                    g2d.setColor(Color.WHITE);
+                    g2d.setFont(new Font("Arial", Font.BOLD, 28));
+                    g2d.drawString("Paused", 340, 250);
                     g2d.setFont(new Font("Arial", Font.PLAIN, 18));
-                    g2d.drawString("Press P to resume.", 320, 310);
+                    for(int i = 0; i < PAUSE_OPTIONS.length; i++)
+                    {
+                        g2d.setColor(i == this.selectedPauseOption ? Color.YELLOW : Color.WHITE);
+                        g2d.drawString(PAUSE_OPTIONS[i], 330, 290 + (i * 30));
+                    }
                 }
                 else if(this.gameState == GameState.GAME_OVER)
                 {
-                    g2d.setFont(new Font("Arial", Font.BOLD, 24));
-                    g2d.drawString("Game Over", 340, 280);
+                    g2d.setColor(new Color(0, 0, 0, 180));
+                    g2d.fillRect(220, 200, 360, 180);
+                    g2d.setColor(Color.WHITE);
+                    g2d.setFont(new Font("Arial", Font.BOLD, 28));
+                    g2d.drawString("Game Over", 310, 240);
                     g2d.setFont(new Font("Arial", Font.PLAIN, 18));
-                    g2d.drawString("Press R to restart.", 330, 310);
+                    g2d.drawString(String.format("Final Score: %d", this.score), 300, 280);
+                    g2d.drawString(String.format("Best Score: %d", this.highScore), 300, 310);
+                    g2d.drawString("Press R to restart.", 300, 340);
+                    g2d.drawString("Press ESC to quit.", 300, 370);
                 }
                 break;
         }
