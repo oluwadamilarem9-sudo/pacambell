@@ -1,5 +1,7 @@
 package game.debug;
 
+import game.audio.AudioHelper;
+import game.audio.SaveHelper;
 import game.framework.Game;
 import game.framework.GameTime;
 import game.input.Keyboard;
@@ -56,12 +58,15 @@ public class Template extends Game
     private boolean invulnerable;
     private float invulnerableTimer;
     private boolean gameOver;
+    private boolean soundOn;
+    private int level;
+    private int nextLevelScore;
     private GameState gameState;
 
     private int selectedTitleOption;
     private int selectedPauseOption;
     private static final String[] TITLE_OPTIONS = {"Start Game", "Exit"};
-    private static final String[] PAUSE_OPTIONS = {"Resume", "Quit"};
+    private static final String[] PAUSE_OPTIONS = {"Resume", "Toggle Sound", "Reset Best", "Quit"};
 
     /**
      * Any objects/variables that need to be Initialized should do so
@@ -72,6 +77,7 @@ public class Template extends Game
     {
         // Initialize stuff in Base
         super.initialize();
+        this.highScore = SaveHelper.loadHighScore();
         resetGame();
         this.gameState = GameState.TITLE;
         this.selectedTitleOption = 0;
@@ -114,6 +120,9 @@ public class Template extends Game
         this.lives = 3;
         this.invulnerable = false;
         this.invulnerableTimer = 0.0f;
+        this.level = 1;
+        this.nextLevelScore = 20;
+        this.soundOn = true;
         this.gameOver = false;
     }
 
@@ -121,6 +130,8 @@ public class Template extends Game
     {
         resetGame();
         this.gameState = GameState.PLAYING;
+        if(this.soundOn)
+            AudioHelper.playBackgroundMusic();
     }
 
     private void spawnCollectible()
@@ -257,6 +268,8 @@ public class Template extends Game
                     this.score += 5;
                     this.collectibleActive = false;
                     this.collectibleTimer = 0.0f;
+                    if(this.soundOn)
+                        AudioHelper.playPickupSound();
                 }
 
                 if(!this.collectibleActive)
@@ -269,6 +282,17 @@ public class Template extends Game
                     }
                 }
 
+                // Level progression
+                if(this.score >= this.nextLevelScore)
+                {
+                    this.level += 1;
+                    this.nextLevelScore += 20;
+                    this.enemyBaseSpeed += 18.0f;
+                    this.enemy2BaseSpeed += 14.0f;
+                    if(this.soundOn)
+                        AudioHelper.playLevelUpSound();
+                }
+
                 // Check for collision with the first enemy
                 if(!this.invulnerable && new Rectangle((int)this.playerX, (int)this.playerY, this.playerWidth, this.playerHeight)
                         .intersects(new Rectangle((int)this.enemyX, (int)this.enemyY, this.enemyWidth, this.enemyHeight)))
@@ -278,11 +302,17 @@ public class Template extends Game
                     this.invulnerableTimer = 2.0f;
                     this.playerX = 100;
                     this.playerY = 250;
+                    if(this.soundOn)
+                        AudioHelper.playHitSound();
                     if(this.lives <= 0)
                     {
                         this.gameOver = true;
                         this.gameState = GameState.GAME_OVER;
                         this.highScore = Math.max(this.highScore, this.score);
+                        SaveHelper.saveHighScore(this.highScore);
+                        if(this.soundOn)
+                            AudioHelper.playGameOverSound();
+                        AudioHelper.stopBackgroundMusic();
                     }
                 }
 
@@ -295,11 +325,17 @@ public class Template extends Game
                     this.invulnerableTimer = 2.0f;
                     this.playerX = 100;
                     this.playerY = 250;
+                    if(this.soundOn)
+                        AudioHelper.playHitSound();
                     if(this.lives <= 0)
                     {
                         this.gameOver = true;
                         this.gameState = GameState.GAME_OVER;
                         this.highScore = Math.max(this.highScore, this.score);
+                        SaveHelper.saveHighScore(this.highScore);
+                        if(this.soundOn)
+                            AudioHelper.playGameOverSound();
+                        AudioHelper.stopBackgroundMusic();
                     }
                 }
 
@@ -315,6 +351,14 @@ public class Template extends Game
                     this.selectedPauseOption = 0;
                     this.gameState = GameState.PAUSED;
                 }
+                if(Keyboard.keyDownOnce(KeyEvent.VK_M))
+                {
+                    this.soundOn = !this.soundOn;
+                    if(this.soundOn)
+                        AudioHelper.playBackgroundMusic();
+                    else
+                        AudioHelper.stopBackgroundMusic();
+                }
                 break;
             case PAUSED:
                 if(Keyboard.keyDownOnce(KeyEvent.VK_DOWN) || Keyboard.keyDownOnce(KeyEvent.VK_S))
@@ -323,10 +367,26 @@ public class Template extends Game
                     this.selectedPauseOption = (this.selectedPauseOption + PAUSE_OPTIONS.length - 1) % PAUSE_OPTIONS.length;
                 if(Keyboard.keyDownOnce(KeyEvent.VK_ENTER))
                 {
-                    if(this.selectedPauseOption == 0)
-                        this.gameState = GameState.PLAYING;
-                    else
-                        Game.exitGame();
+                    switch(this.selectedPauseOption)
+                    {
+                        case 0:
+                            this.gameState = GameState.PLAYING;
+                            break;
+                        case 1:
+                            this.soundOn = !this.soundOn;
+                            if(this.soundOn)
+                                AudioHelper.playBackgroundMusic();
+                            else
+                                AudioHelper.stopBackgroundMusic();
+                            break;
+                        case 2:
+                            this.highScore = 0;
+                            SaveHelper.saveHighScore(this.highScore);
+                            break;
+                        case 3:
+                            Game.exitGame();
+                            break;
+                    }
                 }
                 if(Keyboard.keyDownOnce(KeyEvent.VK_P))
                     this.gameState = GameState.PLAYING;
@@ -339,8 +399,18 @@ public class Template extends Game
 
         this.fps.update(gameTime);
         //<editor-fold defaultstate="collapsed" desc="System & Menu Keys">
+        if(Keyboard.keyDownOnce(KeyEvent.VK_M))
+        {
+            this.soundOn = !this.soundOn;
+            if(this.soundOn && this.gameState == GameState.PLAYING)
+                AudioHelper.playBackgroundMusic();
+            else
+                AudioHelper.stopBackgroundMusic();
+        }
         if(Keyboard.keyDownOnce(KeyEvent.VK_ESCAPE))
         {
+            if(this.gameState == GameState.PLAYING)
+                AudioHelper.stopBackgroundMusic();
             Game.exitGame();
         }
         //</editor-fold>
@@ -367,6 +437,7 @@ public class Template extends Game
                 g2d.setFont(new Font("Arial", Font.PLAIN, 20));
                 g2d.drawString("Use arrow keys or WASD to move.", 260, 260);
                 g2d.drawString("Press ENTER to select.", 280, 290);
+                g2d.drawString("Press M to toggle sound.", 280, 320);
 
                 for(int i = 0; i < TITLE_OPTIONS.length; i++)
                 {
@@ -404,9 +475,13 @@ public class Template extends Game
                 g2d.drawString(String.format("Score: %d", this.score), 10, 60);
                 g2d.drawString(String.format("Lives: %d", this.lives), 10, 80);
                 g2d.drawString(String.format("Best: %d", this.highScore), 10, 100);
-                g2d.drawString(String.format("Difficulty: %.1fx", 1.0f + Math.min(this.elapsedTime / 30.0f, 2.0f)), 10, 120);
-                g2d.drawString("Press P to pause.", 10, 140);
-                g2d.drawString("Collect green orb for +5.", 10, 160);
+                g2d.drawString(String.format("Level: %d", this.level), 10, 120);
+                g2d.drawString(String.format("Next: %d", this.nextLevelScore), 10, 140);
+                g2d.drawString(String.format("Difficulty: %.1fx", 1.0f + Math.min(this.elapsedTime / 30.0f, 2.0f)), 10, 160);
+                g2d.drawString(String.format("Sound: %s", this.soundOn ? "ON" : "OFF"), 10, 180);
+                g2d.drawString("Press P to pause.", 10, 200);
+                g2d.drawString("Press M to toggle sound.", 10, 220);
+                g2d.drawString("Collect green orb for +5.", 10, 240);
 
                 if(this.invulnerable)
                 {
