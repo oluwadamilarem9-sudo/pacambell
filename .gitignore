@@ -40,6 +40,7 @@ private
 *.log
 *.sql
 *.sqlite
+highscore.txt
 
 # OS generated files #
 ######################
