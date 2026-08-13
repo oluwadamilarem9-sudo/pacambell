@@ -94,8 +94,8 @@ public class Template extends Game
         this.playerHeight = 64;
 
         // Initialize a simple enemy
-        this.enemyX = 500;
-        this.enemyY = 220;
+        this.enemyX = 700;
+        this.enemyY = 100;
         this.enemyDirectionX = 1.0f;
         this.enemyBaseSpeed = 126.0f;
         this.enemySpeed = this.enemyBaseSpeed;
@@ -103,8 +103,8 @@ public class Template extends Game
         this.enemyHeight = 64;
 
         // Initialize a second enemy
-        this.enemy2X = 300;
-        this.enemy2Y = 100;
+        this.enemy2X = 700;
+        this.enemy2Y = 500;
         this.enemy2BaseSpeed = 108.0f;
         this.enemy2Width = 64;
         this.enemy2Height = 64;
@@ -118,8 +118,9 @@ public class Template extends Game
         this.scoreTimer = 0.0f;
         this.elapsedTime = 0.0f;
         this.lives = 4;
-        this.invulnerable = false;
-        this.invulnerableTimer = 0.0f;
+        // Short safe window at start to avoid instant collisions
+        this.invulnerable = true;
+        this.invulnerableTimer = 1.5f;
         this.level = 1;
         this.nextLevelScore = 20;
         this.soundOn = true;
