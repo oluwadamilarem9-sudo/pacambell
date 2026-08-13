@@ -97,7 +97,7 @@ public class Template extends Game
         this.enemyX = 500;
         this.enemyY = 220;
         this.enemyDirectionX = 1.0f;
-        this.enemyBaseSpeed = 140.0f;
+        this.enemyBaseSpeed = 126.0f;
         this.enemySpeed = this.enemyBaseSpeed;
         this.enemyWidth = 64;
         this.enemyHeight = 64;
@@ -105,7 +105,7 @@ public class Template extends Game
         // Initialize a second enemy
         this.enemy2X = 300;
         this.enemy2Y = 100;
-        this.enemy2BaseSpeed = 120.0f;
+        this.enemy2BaseSpeed = 108.0f;
         this.enemy2Width = 64;
         this.enemy2Height = 64;
 
@@ -117,7 +117,7 @@ public class Template extends Game
         this.score = 0;
         this.scoreTimer = 0.0f;
         this.elapsedTime = 0.0f;
-        this.lives = 3;
+        this.lives = 4;
         this.invulnerable = false;
         this.invulnerableTimer = 0.0f;
         this.level = 1;
@@ -220,9 +220,9 @@ public class Template extends Game
                 this.playerX = Math.max(0, Math.min(this.playerX, 800 - this.playerWidth));
                 this.playerY = Math.max(0, Math.min(this.playerY, 600 - this.playerHeight));
 
-                // Increase difficulty over time
+                // Increase difficulty over time (slower ramp, lower max)
                 this.elapsedTime += deltaSeconds;
-                float difficultyScale = 1.0f + Math.min(this.elapsedTime / 30.0f, 2.0f);
+                float difficultyScale = 1.0f + Math.min(this.elapsedTime / 45.0f, 1.5f);
                 this.enemySpeed = this.enemyBaseSpeed * difficultyScale;
                 float enemy2Speed = this.enemy2BaseSpeed * difficultyScale;
 
@@ -275,7 +275,7 @@ public class Template extends Game
                 if(!this.collectibleActive)
                 {
                     this.collectibleTimer += deltaSeconds;
-                    if(this.collectibleTimer >= 3.0f)
+                    if(this.collectibleTimer >= 2.5f)
                     {
                         spawnCollectible();
                         this.collectibleTimer = 0.0f;
