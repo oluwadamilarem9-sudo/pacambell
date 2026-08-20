@@ -486,25 +486,45 @@ public class StarterGame extends Game
             g2d.drawString("Move with WASD or arrow keys.", 215, 280);
             g2d.drawString("Press SPACE to shoot.", 260, 310);
             g2d.drawString("Collect green orbs and power-ups.", 205, 340);
-            g2d.drawString("Collect 10 green orbs to win.", 210, 370);
-            g2d.drawString("Press ENTER to play.", 270, 410);
+            g2d.drawString("Collect 8 green orbs to win.", 225, 370);
+            g2d.drawString("Press P to pause at any time.", 225, 400);
+            g2d.drawString("Press ENTER to play.", 270, 440);
             return;
         }
 
+        g2d.setColor(new Color(10, 12, 20, 200));
+        g2d.fillRoundRect(12, 12, 205, 190, 16, 16);
+        g2d.setColor(new Color(120, 180, 255, 160));
+        g2d.drawRoundRect(12, 12, 205, 190, 16, 16);
+
         g2d.setColor(Color.WHITE);
         g2d.setFont(new Font("Arial", Font.BOLD, 14));
-        g2d.setColor(Color.WHITE);
-        g2d.drawString("Score: " + this.score + " / " + WIN_SCORE, 20, 24);
-        g2d.drawString("Lives: " + this.lives, 20, 48);
-        g2d.drawString("Best: " + this.bestScore, 20, 72);
-        g2d.drawString("Wave: " + this.wave, 20, 96);
+        g2d.drawString("Score: " + this.score + " / " + WIN_SCORE, 24, 34);
+        g2d.drawString("Lives: " + this.lives, 24, 58);
+        g2d.drawString("Best: " + this.bestScore, 24, 82);
+        g2d.drawString("Wave: " + this.wave, 24, 106);
+        g2d.drawString("Press P to pause", 24, 130);
+
+        int statusY = 154;
         if(this.rapidFireTimer > 0.0f)
-            g2d.drawString("Rapid Fire!", 20, 120);
+        {
+            g2d.setColor(new Color(110, 200, 255));
+            g2d.drawString("Rapid Fire!", 24, statusY);
+            statusY += 22;
+        }
         if(this.shieldTimer > 0.0f)
-            g2d.drawString("Shield!", 20, 144);
+        {
+            g2d.setColor(new Color(255, 190, 80));
+            g2d.drawString("Shield!", 24, statusY);
+        }
 
         g2d.setColor(Color.YELLOW);
         g2d.fillOval((int)this.playerX, (int)this.playerY, this.playerSize, this.playerSize);
+        if(this.shieldTimer > 0.0f)
+        {
+            g2d.setColor(new Color(100, 220, 255, 120));
+            g2d.fillOval((int)this.playerX - 8, (int)this.playerY - 8, this.playerSize + 16, this.playerSize + 16);
+        }
 
         for(Bullet bullet : this.bullets)
         {
@@ -545,6 +565,8 @@ public class StarterGame extends Game
 
         g2d.setColor(Color.GREEN);
         g2d.fillOval((int)this.targetX, (int)this.targetY, this.targetSize, this.targetSize);
+        g2d.setColor(new Color(255, 255, 255, 160));
+        g2d.drawOval((int)this.targetX - 6, (int)this.targetY - 6, this.targetSize + 12, this.targetSize + 12);
 
         if(this.bossActive)
         {
